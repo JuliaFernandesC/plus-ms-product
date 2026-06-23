@@ -1,0 +1,134 @@
+[
+  {
+    "timestamp": "2026-06-23T10:05:35.631Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "tentei rodar os testes funcionais, da pasta /functional com o comando"
+  },
+  {
+    "timestamp": "2026-06-23T10:05:38.859Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "tentei rodar os testes funcionais, da pasta /functional com o comando pytest -c pytest-functional.ini e não consegui. meu docker esta instal"
+  },
+  {
+    "timestamp": "2026-06-23T10:05:48.695Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "ta, não rodei o meu docker. como"
+  },
+  {
+    "timestamp": "2026-06-23T10:06:02.080Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "não entendi,"
+  },
+  {
+    "timestamp": "2026-06-23T10:06:03.200Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "não entendi, eu abri o docker desktop"
+  },
+  {
+    "timestamp": "2026-06-23T10:06:04.255Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "não entendi, eu abri o docker desktop e ai faço oque? O que que tem que ficar estável? não preciso rodar algum comando para rodar o docker?"
+  },
+  {
+    "timestamp": "2026-06-23T11:36:16.085Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "tentei rodar os testes funcionais, da pasta /functional com o comando"
+  },
+  {
+    "timestamp": "2026-06-23T11:36:16.764Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "tentei rodar os testes funcionais, da pasta /functional com o comando pytest -c pytest-functional.ini e não consegui. meu docker esta instal"
+  },
+  {
+    "timestamp": "2026-06-23T11:36:26.690Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "ta, não rodei o meu docker. como"
+  },
+  {
+    "timestamp": "2026-06-23T11:36:31.331Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "não entendi,"
+  },
+  {
+    "timestamp": "2026-06-23T11:36:32.183Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "não entendi, eu abri o docker desktop"
+  },
+  {
+    "timestamp": "2026-06-23T11:36:32.766Z",
+    "source": "github_copilot",
+    "git_branch": "main",
+    "git_user_name": "Julia",
+    "call_context": {
+      "cwd": "c:\\Users\\User\\OneDrive\\Documentos\\PUCRS\\Semestre 5\\ES\\plus-ms-product"
+    },
+    "role": "user",
+    "content": "não entendi, eu abri o docker desktop e ai faço oque? O que que tem que ficar estável? não preciso rodar algum comando para rodar o docker?"
+  }
+]
