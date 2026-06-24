@@ -1,10 +1,5 @@
-"""Testes unitários do controller de Produtos (/products).
-
-Nota: "tamanho" foi removido como atributo da Variante (decisão tomada
-com o professor — tamanho passou a ser tratado como categoria), então
-as variantes aqui só têm `cor` e `sku`.
-"""
-from tests.unit.conftest import create_product
+"""Testes unitários do controller de Produtos (/products)."""
+from tests.unit.conftest import create_product, create_size
 
 
 def test_create_product_success(client):
@@ -54,13 +49,15 @@ def test_create_product_negative_preco_returns_422(client):
 
 
 def test_create_product_with_nested_variantes(client):
+    size = create_size(client, nome="M")
+
     response = client.post(
         "/products",
         json={
             "nome": "Calça Jeans",
             "preco": 199.90,
             "variantes": [
-                {"cor": "Azul", "sku": "CJ-AZ-M"},
+                {"tamanhoId": size["id"], "cor": "Azul", "sku": "CJ-AZ-M"},
             ],
         },
     )
@@ -70,11 +67,29 @@ def test_create_product_with_nested_variantes(client):
     assert "variantes" not in response.json()
 
 
+def test_create_product_with_invalid_tamanho_in_nested_variante_returns_400(client):
+    response = client.post(
+        "/products",
+        json={
+            "nome": "Calça com Tamanho Inválido",
+            "preco": 99.90,
+            "variantes": [
+                {"tamanhoId": "tamanho-que-nao-existe", "cor": "Azul", "sku": "CJ-INVALIDO"},
+            ],
+        },
+    )
+
+    assert response.status_code == 400
+    # Nada deve ter sido persistido: nem o produto, nem a variante.
+    assert client.get("/products/search", params={"nome": "Tamanho Inválido"}).json()["totalItems"] == 0
+
+
 def test_create_product_with_duplicate_sku_against_db_in_nested_variante_returns_409(client):
+    size = create_size(client, nome="M")
     create_product(
         client,
         nome="Produto Existente",
-        variantes=[{"cor": "Preto", "sku": "SKU-JA-EXISTE"}],
+        variantes=[{"tamanhoId": size["id"], "cor": "Preto", "sku": "SKU-JA-EXISTE"}],
     )
 
     response = client.post(
@@ -82,7 +97,7 @@ def test_create_product_with_duplicate_sku_against_db_in_nested_variante_returns
         json={
             "nome": "Produto Novo",
             "preco": 50.0,
-            "variantes": [{"cor": "Branco", "sku": "SKU-JA-EXISTE"}],
+            "variantes": [{"tamanhoId": size["id"], "cor": "Branco", "sku": "SKU-JA-EXISTE"}],
         },
     )
 
@@ -90,14 +105,16 @@ def test_create_product_with_duplicate_sku_against_db_in_nested_variante_returns
 
 
 def test_create_product_with_duplicate_sku_within_same_payload_returns_409(client):
+    size = create_size(client, nome="M")
+
     response = client.post(
         "/products",
         json={
             "nome": "Produto com SKUs duplicados",
             "preco": 50.0,
             "variantes": [
-                {"cor": "Preto", "sku": "SKU-DUPLICADO-NO-PAYLOAD"},
-                {"cor": "Branco", "sku": "SKU-DUPLICADO-NO-PAYLOAD"},
+                {"tamanhoId": size["id"], "cor": "Preto", "sku": "SKU-DUPLICADO-NO-PAYLOAD"},
+                {"tamanhoId": size["id"], "cor": "Branco", "sku": "SKU-DUPLICADO-NO-PAYLOAD"},
             ],
         },
     )
@@ -138,10 +155,11 @@ def test_list_products_pagination_metadata(client):
 
 
 def test_get_product_by_id_includes_variantes(client):
+    size = create_size(client, nome="G")
     created = create_product(
         client,
         nome="Saia Plissada",
-        variantes=[{"cor": "Preto", "sku": "SP-PT-G"}],
+        variantes=[{"tamanhoId": size["id"], "cor": "Preto", "sku": "SP-PT-G"}],
     )
 
     response = client.get(f"/products/{created['id']}")
@@ -150,6 +168,7 @@ def test_get_product_by_id_includes_variantes(client):
     body = response.json()
     assert len(body["variantes"]) == 1
     assert body["variantes"][0]["sku"] == "SP-PT-G"
+    assert body["variantes"][0]["tamanho"]["nome"] == "G"
 
 
 def test_get_product_by_id_not_found(client):
@@ -179,10 +198,11 @@ def test_update_product_not_found_returns_404(client):
 
 
 def test_disable_product_cascades_to_variantes(client):
+    size = create_size(client, nome="P")
     created = create_product(
         client,
         nome="Conjunto Praia",
-        variantes=[{"cor": "Vermelho", "sku": "CP-VM-P"}],
+        variantes=[{"tamanhoId": size["id"], "cor": "Vermelho", "sku": "CP-VM-P"}],
     )
 
     response = client.patch(f"/products/{created['id']}/disable")
@@ -223,21 +243,27 @@ def test_search_products_by_preco_range(client):
     assert "Produto Barato" not in nomes
 
 
-def test_search_products_by_cor(client):
+def test_search_products_by_cor_and_tamanho(client):
+    size_m = create_size(client, nome="M")
+    size_g = create_size(client, nome="G")
     create_product(
         client,
         nome="Camisa Listrada",
-        variantes=[{"cor": "Branco", "sku": "CL-BR-M"}],
+        variantes=[{"tamanhoId": size_m["id"], "cor": "Branco", "sku": "CL-BR-M"}],
     )
     create_product(
         client,
         nome="Camisa Lisa",
-        variantes=[{"cor": "Preto", "sku": "CL-PT-G"}],
+        variantes=[{"tamanhoId": size_g["id"], "cor": "Preto", "sku": "CL-PT-G"}],
     )
 
     response = client.get("/products/search", params={"cor": "Branco"})
     nomes = [p["nome"] for p in response.json()["items"]]
     assert nomes == ["Camisa Listrada"]
+
+    response = client.get("/products/search", params={"tamanho": "G"})
+    nomes = [p["nome"] for p in response.json()["items"]]
+    assert nomes == ["Camisa Lisa"]
 
 
 def test_search_products_without_filters_returns_all(client):

@@ -1,18 +1,14 @@
-"""Testes unitários do controller de Variantes (/products/{id}/variants e /variants).
-
-Nota: a partir da decisão de modelagem tomada com o professor, "tamanho"
-passou a ser tratado como uma categoria (não como um atributo próprio da
-Variante) — por isso a Variante aqui só tem `cor` e `sku`.
-"""
-from tests.unit.conftest import create_product
+"""Testes unitários do controller de Variantes (/products/{id}/variants e /variants)."""
+from tests.unit.conftest import create_product, create_size
 
 
 def test_create_variant_success(client):
     product = create_product(client)
+    size = create_size(client, nome="M")
 
     response = client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Vermelho", "sku": "SKU-001"},
+        json={"tamanhoId": size["id"], "cor": "Vermelho", "sku": "SKU-001"},
     )
 
     assert response.status_code == 201
@@ -20,28 +16,44 @@ def test_create_variant_success(client):
     assert body["cor"] == "Vermelho"
     assert body["sku"] == "SKU-001"
     assert body["produtoId"] == product["id"]
+    assert body["tamanhoId"] == size["id"]
+    assert body["tamanho"]["nome"] == "M"
     assert body["ativo"] is True
 
 
 def test_create_variant_product_not_found_returns_404(client):
+    size = create_size(client, nome="M")
+
     response = client.post(
         "/products/id-que-nao-existe/variants",
-        json={"cor": "Azul", "sku": "SKU-404"},
+        json={"tamanhoId": size["id"], "cor": "Azul", "sku": "SKU-404"},
     )
 
     assert response.status_code == 404
 
 
+def test_create_variant_invalid_size_returns_400(client):
+    product = create_product(client)
+
+    response = client.post(
+        f"/products/{product['id']}/variants",
+        json={"tamanhoId": "tamanho-que-nao-existe", "cor": "Azul", "sku": "SKU-002"},
+    )
+
+    assert response.status_code == 400
+
+
 def test_create_variant_duplicate_sku_returns_409(client):
     product = create_product(client)
+    size = create_size(client, nome="M")
     client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Verde", "sku": "SKU-DUP"},
+        json={"tamanhoId": size["id"], "cor": "Verde", "sku": "SKU-DUP"},
     )
 
     response = client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Amarelo", "sku": "SKU-DUP"},
+        json={"tamanhoId": size["id"], "cor": "Amarelo", "sku": "SKU-DUP"},
     )
 
     assert response.status_code == 409
@@ -49,13 +61,14 @@ def test_create_variant_duplicate_sku_returns_409(client):
 
 def test_list_variants_by_product(client):
     product = create_product(client)
+    size = create_size(client, nome="M")
     client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Preto", "sku": "SKU-LIST-1"},
+        json={"tamanhoId": size["id"], "cor": "Preto", "sku": "SKU-LIST-1"},
     )
     client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Branco", "sku": "SKU-LIST-2"},
+        json={"tamanhoId": size["id"], "cor": "Branco", "sku": "SKU-LIST-2"},
     )
 
     response = client.get(f"/products/{product['id']}/variants")
@@ -73,9 +86,10 @@ def test_list_variants_by_product_not_found_returns_404(client):
 
 def test_get_variant_by_id_success(client):
     product = create_product(client)
+    size = create_size(client, nome="M")
     created = client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Rosa", "sku": "SKU-GET"},
+        json={"tamanhoId": size["id"], "cor": "Rosa", "sku": "SKU-GET"},
     ).json()
 
     response = client.get(f"/variants/{created['id']}")
@@ -92,9 +106,10 @@ def test_get_variant_by_id_not_found(client):
 
 def test_update_variant_cor(client):
     product = create_product(client)
+    size = create_size(client, nome="M")
     created = client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Azul", "sku": "SKU-UPD"},
+        json={"tamanhoId": size["id"], "cor": "Azul", "sku": "SKU-UPD"},
     ).json()
 
     response = client.put(f"/variants/{created['id']}", json={"cor": "Roxo"})
@@ -105,15 +120,31 @@ def test_update_variant_cor(client):
     assert body["sku"] == "SKU-UPD"  # não foi alterado
 
 
+def test_update_variant_tamanho_invalido_returns_400(client):
+    product = create_product(client)
+    size = create_size(client, nome="M")
+    created = client.post(
+        f"/products/{product['id']}/variants",
+        json={"tamanhoId": size["id"], "cor": "Azul", "sku": "SKU-UPD2"},
+    ).json()
+
+    response = client.put(
+        f"/variants/{created['id']}", json={"tamanhoId": "tamanho-invalido"}
+    )
+
+    assert response.status_code == 400
+
+
 def test_update_variant_to_existing_sku_returns_409(client):
     product = create_product(client)
+    size = create_size(client, nome="M")
     client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Azul", "sku": "SKU-EXISTENTE"},
+        json={"tamanhoId": size["id"], "cor": "Azul", "sku": "SKU-EXISTENTE"},
     )
     created = client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Verde", "sku": "SKU-PARA-ATUALIZAR"},
+        json={"tamanhoId": size["id"], "cor": "Verde", "sku": "SKU-PARA-ATUALIZAR"},
     ).json()
 
     response = client.put(f"/variants/{created['id']}", json={"sku": "SKU-EXISTENTE"})
@@ -129,9 +160,10 @@ def test_update_variant_not_found_returns_404(client):
 
 def test_disable_variant_marks_as_inactive(client):
     product = create_product(client)
+    size = create_size(client, nome="M")
     created = client.post(
         f"/products/{product['id']}/variants",
-        json={"cor": "Azul", "sku": "SKU-DISABLE"},
+        json={"tamanhoId": size["id"], "cor": "Azul", "sku": "SKU-DISABLE"},
     ).json()
 
     response = client.patch(f"/variants/{created['id']}/disable")

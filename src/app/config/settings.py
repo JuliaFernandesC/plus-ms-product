@@ -20,13 +20,9 @@ class Settings:
     # criar/atualizar um produto. Se não for configurada, a validação
     # cross-service é simplesmente pulada (fail-open) — ver ADR.md, seção de
     # trade-offs, para a justificativa dessa escolha.
-    CATEGORIA_SERVICE_URL: str = os.getenv("CATEGORIA_SERVICE_URL", "")
+    CATEGORIA_SERVICE_URL: str = os.getenv("CATEGORIA_SERVICE_URL", "http://localhost:3004")
     CATEGORIA_SERVICE_TIMEOUT_SECONDS: float = float(os.getenv("CATEGORIA_SERVICE_TIMEOUT_SECONDS", "3"))
-
-    # URL base do MS de Fornecedores, usada para validar fornecedorId antes de
-    # criar/atualizar um produto. Mesmo padrão de fail-open do MS de
-    # Categorias — ver app/clients/supplier_client.py e ADR.md.
-    SUPPLIER_SERVICE_URL: str = os.getenv("SUPPLIER_SERVICE_URL", "")
+    SUPPLIER_SERVICE_URL: str = os.getenv("SUPPLIER_SERVICE_URL", "http://localhost:3003")
     SUPPLIER_SERVICE_TIMEOUT_SECONDS: float = float(os.getenv("SUPPLIER_SERVICE_TIMEOUT_SECONDS", "3"))
 
     @property

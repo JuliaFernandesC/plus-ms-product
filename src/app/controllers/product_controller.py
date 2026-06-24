@@ -5,12 +5,11 @@ from sqlalchemy.orm import Session
 from app.clients import categoria_client, supplier_client
 from app.config.security import get_bearer_token, get_current_user, require_admin
 from app.database.connection import get_db
-from app.models.product_model import ProductModel, VariantModel
+from app.models.product_model import ProductModel
 from app.dtos.product_dtos import (
     ProductCreateRequest,
     ProductUpdateRequest,
     ProductResponse,
-    ProductDetailResponse,
     PaginatedProductResponse,
     MessageResponse
 )
@@ -38,47 +37,15 @@ def _validate_categoria_id(categoria_id: str | None, bearer_token: str | None) -
 
 
 def _validate_fornecedor_id(fornecedor_id: str | None, bearer_token: str | None) -> None:
-    """Valida cross-service o fornecedorId informado, se houver.
-
-    Mesma lógica de _validate_categoria_id, usando o cliente do MS de
-    Fornecedores (app/clients/supplier_client.py). Levanta 400 apenas
-    quando o serviço CONFIRMA que o fornecedor não existe.
-    """
     if not fornecedor_id:
         return
 
-    exists = supplier_client.fornecedor_exists(fornecedor_id, bearer_token=bearer_token)
+    exists = supplier_client.supplier_exists(fornecedor_id, bearer_token=bearer_token)
     if exists is False:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="fornecedorId não corresponde a um fornecedor existente"
         )
-
-
-def _validate_variantes_payload(db: Session, variantes) -> None:
-    """Replica, na criação de produto com variantes aninhadas, as mesmas
-    validações já existentes na rota dedicada de variantes
-    (POST /products/{id}/variants): SKU não pode estar duplicado — nem
-    contra o banco, nem dentro do próprio payload.
-    """
-    if not variantes:
-        return
-
-    skus_no_payload = set()
-    for v in variantes:
-        if v.sku in skus_no_payload:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"SKU '{v.sku}' duplicado dentro da mesma requisição"
-            )
-        skus_no_payload.add(v.sku)
-
-        existing_sku = db.query(VariantModel).filter(VariantModel.sku == v.sku).first()
-        if existing_sku:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"SKU '{v.sku}' já cadastrado para outra variante"
-            )
 
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
@@ -90,7 +57,6 @@ def create_product(
 ):
     _validate_categoria_id(data.categoriaId, bearer_token)
     _validate_fornecedor_id(data.fornecedorId, bearer_token)
-    _validate_variantes_payload(db, data.variantes)
 
     product = ProductModel(
         nome=data.nome,
@@ -102,16 +68,6 @@ def create_product(
         ativo=True
     )
     db.add(product)
-
-    if data.variantes:
-        for v in data.variantes:
-            variant = VariantModel(
-                produto=product,
-                cor=v.cor,
-                sku=v.sku,
-                ativo=True
-            )
-            db.add(variant)
 
     try:
         db.commit()
@@ -140,7 +96,7 @@ def list_products(
     total_pages = math.ceil(total_items / pageSize) if total_items > 0 else 0
 
     return PaginatedProductResponse(
-        items=[ProductDetailResponse.model_validate(p) for p in products],
+        items=[ProductResponse.model_validate(p) for p in products],
         page=page,
         pageSize=pageSize,
         totalItems=total_items,
@@ -152,7 +108,6 @@ def search_products(
     nome: str = Query(None),
     categoriaId: str = Query(None),
     fornecedorId: str = Query(None),
-    cor: str = Query(None),
     marca: str = Query(None),
     precoMin: float = Query(None),
     precoMax: float = Query(None),
@@ -184,12 +139,7 @@ def search_products(
     if precoMax is not None:
         query = query.filter(ProductModel.preco <= precoMax)
 
-    # Filtros por Variántes (Cor)
-    if cor:
-        query = query.join(ProductModel.variantes)
-        query = query.filter(VariantModel.cor.ilike(f"%{cor}%"))
-
-    # Remover duplicatas que podem vir do join
+    # Remover duplicatas eventuais
     query = query.distinct()
     
     total_items = query.count()
@@ -197,14 +147,14 @@ def search_products(
     total_pages = math.ceil(total_items / pageSize) if total_items > 0 else 0
 
     return PaginatedProductResponse(
-        items=[ProductDetailResponse.model_validate(p) for p in products],
+        items=[ProductResponse.model_validate(p) for p in products],
         page=page,
         pageSize=pageSize,
         totalItems=total_items,
         totalPages=total_pages
     )
 
-@router.get("/{id}", response_model=ProductDetailResponse)
+@router.get("/{id}", response_model=ProductResponse)
 def get_product_by_id(
     id: str,
     db: Session = Depends(get_db),
@@ -216,7 +166,7 @@ def get_product_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Produto não encontrado"
         )
-    return ProductDetailResponse.model_validate(product)
+    return ProductResponse.model_validate(product)
 
 @router.put("/{id}", response_model=ProductResponse)
 def update_product(
@@ -276,10 +226,6 @@ def disable_product(
             detail="Produto não encontrado"
         )
     
-    # Soft delete do produto e desativação em cascata das suas variantes
     product.ativo = False
-    for v in product.variantes:
-        v.ativo = False
-
     db.commit()
     return MessageResponse(message="Produto desativado com sucesso")
